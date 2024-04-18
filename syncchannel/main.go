@@ -1,5 +1,7 @@
 package main
 
+import "fmt"
+
 type Student struct {
 	Name     string
 	IPK      float64
@@ -9,11 +11,27 @@ type Student struct {
 }
 
 func (s *Student) SetIsPassed(x chan Student) {
-	// TODO implement code
+	if s.IPK >= 2.5 {
+		s.IsPassed = true
+	} else {
+		s.IsPassed = false
+	}
+
+	x <- *s
 }
 
 func (s *Student) SetHonors(x, y chan Student) {
-	// TODO implement code
+	*s = <-x
+
+	if s.IsPassed {
+		if s.IPK >= 3.5 && s.SKS >= 100 {
+			s.Honor = "Cumlaude"
+		} else {
+			s.Honor = "No Honor"
+		}
+	}
+
+	y <- *s
 }
 
 func main() {
@@ -29,18 +47,22 @@ func main() {
 	chStudentHonor := make(chan Student, len(listStudent))
 
 	for _, student := range listStudent {
-		go student.SetIsPassed(chStudent)
-		go student.SetHonors(chStudent, chStudentHonor)
+		// avoid race condition
+		student := student
+		go func() {
+			student.SetIsPassed(chStudent)
+			student.SetHonors(chStudent, chStudentHonor)
+		}()
 	}
 
 	for i := 0; i < len(listStudent); i++ {
 		student := <-chStudentHonor
-		println("Name:", student.Name)
-		println("IPK:", student.IPK)
-		println("SKS:", student.SKS)
-		println("Is Passed:", student.IsPassed)
-		println("Honor:", student.Honor)
-		println()
+		fmt.Println("Name:", student.Name)
+		fmt.Println("IPK:", student.IPK)
+		fmt.Println("SKS:", student.SKS)
+		fmt.Println("Is Passed:", student.IsPassed)
+		fmt.Println("Honor:", student.Honor)
+		fmt.Println()
 	}
 
 }

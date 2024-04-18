@@ -7,26 +7,31 @@ import (
 
 func ProcessStudentData(data student.Student, ch chan student.Student, chErr chan error) {
 	if data == (student.Student{}) {
-		// TODO: send error to channel
+		chErr <- student.ErrStudentEmpty
 		return
 	}
 
 	if data.Name == "" {
-		// TODO: send error to channel
+		chErr <- student.ErrStudentNotValid
 		return
 	}
 
 	if data.IPK < 0 {
-		// TODO: send error to channel
+		chErr <- student.ErrStudentNotValid
 		return
 	}
 
 	if data.SKS < 0 {
-		// TODO: send error to channel
+		chErr <- student.ErrStudentNotValid
 		return
 	}
 
-	// TODO: process student data
+	data.SetFirstName()
+	data.SetLastName()
+	data.SetIsPassed()
+	data.SetHonors()
+
+	ch <- data
 }
 
 func runSequentially() {
@@ -71,22 +76,21 @@ func runConcurrently() {
 		go ProcessStudentData(data, ch, errCh)
 	}
 
-	go func() {
-		for err := range errCh {
+	for i := 0; i < len(dummyData); i++ {
+		// materi (select) : https://dasarpemrogramangolang.novalagung.com/A-channel-select.html
+		select {
+		case data := <-ch:
+			fmt.Println("Name:", data.Name)
+			fmt.Println("First Name:", data.FirstName)
+			fmt.Println("Last Name:", data.LastName)
+			fmt.Println("IPK:", data.IPK)
+			fmt.Println("SKS:", data.SKS)
+			fmt.Println("Is Passed:", data.IsPassed)
+			fmt.Println("Honor:", data.Honor)
+			fmt.Println()
+		case err := <-errCh:
 			fmt.Println(err.Error())
 		}
-	}()
-
-	for i := 0; i < len(dummyData); i++ {
-		data := <-ch
-		fmt.Println("Name:", data.Name)
-		fmt.Println("First Name:", data.FirstName)
-		fmt.Println("Last Name:", data.LastName)
-		fmt.Println("IPK:", data.IPK)
-		fmt.Println("SKS:", data.SKS)
-		fmt.Println("Is Passed:", data.IsPassed)
-		fmt.Println("Honor:", data.Honor)
-		fmt.Println()
 	}
 }
 

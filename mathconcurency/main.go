@@ -2,10 +2,13 @@ package main
 
 func add(a chan int, b chan int) {
 	// TODO: receive data from channel a
+	x := <-a
 
 	// TODO: add 2 to x
+	x += 2
 
 	// TODO: send data to channel b
+	b <- x
 }
 
 func main() {
